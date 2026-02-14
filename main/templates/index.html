@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Password Risk Evaluation</title>
+
+    <style>
+        :root {
+            --bg-main: #050805;
+            --bg-card: #0b140f;
+            --green-main: #00ff88;
+            --text-main: #e6fff3;
+            --text-muted: #8fbfa6;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #0f1f14, var(--bg-main));
+            color: var(--text-main);
+            font-family: 'Neo Sans', cursive, sans-serif;
+        }
+
+        /* Centered card – content-sized height */
+        .container {
+            width: 520px;
+            max-width: 92%;
+            margin: 80px auto 60px auto;
+            padding: 36px 40px;
+
+            background: linear-gradient(180deg, #0e1c13, var(--bg-card));
+            border-radius: 16px;
+
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            box-shadow:
+                0 18px 50px rgba(0,0,0,.75),
+                0 0 24px rgba(0,255,136,.07);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--green-main);
+            letter-spacing: 1px;
+            margin-bottom: 26px;
+            text-shadow: 0 0 10px rgba(0,255,136,.5);
+        }
+
+        form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        input[type="password"] {
+            flex: 1;
+            padding: 12px;
+            background: #07110c;
+            border: 1px solid rgba(0,255,136,.3);
+            border-radius: 8px;
+            color: var(--text-main);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--green-main);
+            box-shadow: 0 0 10px rgba(0,255,136,.4);
+        }
+
+        button {
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #04120a;
+        }
+
+        .error {
+            color: #ff5a5a;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .Output {
+            margin-top: 20px;
+            padding: 20px;
+            background: #07140e;
+            border-radius: 12px;
+            border: 1px solid rgba(0,255,136,.15);
+            animation: fadeIn .4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .Output h3 {
+            margin-top: 0;
+            color: #fffffb;
+            padding-bottom: 1px;
+        }
+
+        .Output p {
+            font-size: .92rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            margin: 10px 0;
+            text-align: justify;
+            text-justify: inter-word;
+        }
+
+        /* Strength bar */
+        .bar {
+            height: 10px;
+            background: #04130b;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 6px 0 14px;
+        }
+
+        .fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            animation: loadBar 1s ease forwards;
+        }
+
+        @keyframes loadBar {
+            from { width: 0; }
+        }
+
+        /* Risk block */
+        .risk-wrap {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .risk-label {
+            align-self: flex-start;
+            padding: 6px 14px;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+
+        /* CRITICAL */
+        .risk-CRITICAL {
+            border: 1px solid #ff2b2b;
+            box-shadow: 0 0 18px rgba(255,43,43,.4);
+        }
+
+        .risk-CRITICAL .risk-label {
+            background: #ff2b2b;
+            color: #120202;
+            animation: pulseCritical 1s infinite;
+        }
+        .dashboard-btn {
+    display: inline-block;
+    padding: 8px 15px;
+    font-weight:bold;
+    font-size: 12px;
+    background: linear-gradient(135deg, #00ff88, #00cc6a);
+    color: #04120a;
+    border-radius: 999px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.dashboard-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 25px rgba(0,255,136,.8);
+}
+
+        @keyframes pulseCritical {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(4px) scale(1.05); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* HIGH */
+        .risk-HIGH {
+            border: 1px solid #ff5a3d;
+        }
+
+        .risk-HIGH .risk-label {
+            background: #ff5a3d;
+            color: #1a0704;
+            animation: slideWarn 1.5s ease-in-out infinite;
+        }
+
+        @keyframes slideWarn {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(6px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* MEDIUM */
+        .risk-MEDIUM {
+            border: 1px solid #ffb84d;
+        }
+
+        .risk-MEDIUM .risk-label {
+            background: #ffb84d;
+            color: #1a1204;
+            animation: floatSoft 3s ease-in-out infinite;
+        }
+
+        @keyframes floatSoft {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* LOW */
+        .risk-LOW {
+            border: 1px solid var(--green-main);
+        }
+
+        .risk-LOW .risk-label {
+            background: var(--green-main);
+            color: #04120a;
+        }
+
+        .breach-unknown {
+            color: #ff9f43;
+            font-size: .85rem;
+            text-shadow: 0 0 6px rgba(255,159,67,.6);
+        }
+        /* Results divider bar */
+.results-bar {
+    height: 10px;
+    background: #04130b;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 2px 0 2px;
+    padding-top:5px;
+}
+
+.results-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(
+        90deg,
+        #00ff88,
+        #00cc6a,
+        #00ff88
+    );
+    box-shadow: 0 0 12px rgba(0,255,136,.4);
+}
+        .results-fill {
+    background-size: 200% 100%;
+    animation: scanGlow 3s linear infinite;
+}
+
+@keyframes scanGlow {
+    from { background-position: 0% 0; }
+    to { background-position: 200% 0; }
+}
+.explain {
+    font-size: 0.9rem;
+    line-height: 1.65;
+
+    color: #fffffb;
+
+    margin: 8px 0 14px;
+
+    text-align: justify;
+    text-justify: inter-word;
+
+    opacity: 0.95;
+
+     border-left: 2px solid #fffffb;
+     padding-left: 12px;
+}
+
+
+    </style>
+</head>
+
+<body>
+<div class="page">
+    <div style="text-align:center; margin-top:90px;margin-bottom:10px;">
+            <a href="http://localhost:8501" target="_blank" class="dashboard-btn">
+                Telemetry and Analytics Dashboard
+            </a>
+    </div>
+<div class="container">
+
+    <h2>PASSWORD RISK INTELLIGENCE SYSTEM</h2>
+
+    <form method="post">
+        <input type="password" name="password" style="font-family: 'Neo Sans', cursive, sans-serif;" placeholder="Enter password & Press Enter..." required>
+
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if result %}
+    <div class="Output">
+        {% if result.breaches == -1 %}
+            <h3>RESULTS (!Assessing Without Breach Data!)</h3>
+        {% else %}
+            <h3>RESULTS</h3>
+        {% endif %}
+
+        {% if result.breaches == -1 %}
+        <div class="risk-wrap risk-HIGH">
+            <span class="risk-label">UNKNOWN</span>
+            <span>Breach data unavailable (network or API failure).</span>
+        </div>
+        {% elif result.breaches > 0 %}
+            <div class="risk-wrap risk-CRITICAL">
+                <span class="risk-label">BREACHES FOUND</span>
+                <span>Password has appeared {{ result.breaches }} times in known breaches.</span>
+            </div>
+
+        {% else %}
+            <div class="risk-wrap risk-LOW">
+                <span class="risk-label">NO BREACHES</span>
+                <span>Password has not appeared in any known breaches.</span>
+            </div>
+        {% endif %}
+
+        <div class="results-bar">
+            <div class="results-fill"></div>
+        </div>
+
+        <p class="explain" style="color:#fffffb;font-weight:bold;"><strong style="color:#fffffb">RULE SCORE:</strong> {{ result.rules }} / 8 ({{result.rules}} Out Of 8)</p>
+        {% if result.rules <= 3 %}
+            <div class="risk-wrap risk-CRITICAL">
+                <span class="risk-label">LOW</span>
+                <span>Password meets very few security rules. Please increase password complexity significantly to minimize risk.</span>
+            </div>
+        {% elif result.rules <= 5 %}
+            <div class="risk-wrap risk-MEDIUM">
+                <span class="risk-label">MODERATE</span>
+                <span>Password meets basic security requirements. Further increase in password complexity recommended to minimize risk.</span>
+            </div>
+        {% elif result.rules <= 7 %}
+            <div class="risk-wrap risk-LOW">
+                <span class="risk-label">GOOD</span>
+                <span>Password follows most recommended security rules. Nearly Optimal, a few clever tweaks and this Password can be Solid.</span>
+            </div>
+        {% else %}
+            <div class="risk-wrap risk-LOW">
+                <span class="risk-label">EXCELLENT</span>
+                <span>Password follows all recommended security rules. Well done.</span>
+            </div>
+        {% endif %}
+
+         <div class="results-bar">
+            <div class="results-fill"></div>
+        </div>
+
+        <p class="explain" style="color:#fffffb;font-weight:bold;"><strong style="color:#fffffb">ENTROPY:</strong> {{ result.entropy }} bits</p>
+        {% if result.entropy < 40 %}
+            <div class="risk-wrap risk-CRITICAL">
+                <span class="risk-label">VERY WEAK</span>
+                <span>Entropy is critically low and easy to guess. Increase in randomness of the password pattern is urgently required.</span>
+            </div>
+        {% elif result.entropy <= 60 %}
+            <div class="risk-wrap risk-HIGH">
+                <span class="risk-label">WEAK</span>
+                <span>Entropy provides limited resistance to guessing attacks. Increase in randomness of the password pattern is recommended.</span>
+            </div>
+        {% elif result.entropy <= 80 %}
+            <div class="risk-wrap risk-MEDIUM">
+                <span class="risk-label">MODERATE</span>
+                <span>Entropy is reasonable but not ideal for long-term security. Few more tweaks away from an Entropically Strong Password.</span>
+            </div>
+        {% else %}
+            <div class="risk-wrap risk-LOW">
+                <span class="risk-label">STRONG</span>
+                <span>Entropy is high under theoretical attack models. A Strong password theoretically.</span>
+            </div>
+        {% endif %}
+
+         <div class="results-bar">
+            <div class="results-fill"></div>
+        </div>
+
+        <div class="risk-wrap risk-{{ result.risk }}">
+                <span class="risk-label">{{ result.risk }} RISK</span>
+                <span>{{ result.message }}</span>
+        </div>
+
+        <div class="results-bar">
+            <div class="results-fill"></div>
+        </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>
