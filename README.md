@@ -127,9 +127,7 @@ dashboard using Streamlit and Plotly.
 The dashboard provides:
 
 -   Risk level distribution Pie Chart (Visualization of Password Risk Level frequencies over time).
--   Entropy distribution histogram (Visualization of Entropy Magnitude categorized on passwords of different risk levels over time).
 -   Rule score distribution (Visualization of the Frequencies of scores from 1 to 8 for passwords over time).
--   Breach vs entropy scatter plot (log scale) (Visualization of relation between Breach and Entropy for passwords of different risk levels).
 -   Time-series monitoring Line Graph (Visualization of magnitude of passwords evaluated per day over time).
 -   Correlation heatmap Matrix (Visualizes how the metrics 'Breach Count', 'Entropy' and 'Rule Score' correlate with each other).
 
