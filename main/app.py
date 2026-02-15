@@ -33,8 +33,6 @@ def index():
         message,risk = classify_risk(entropy, rules_score, breaches)
         database = Database()
         database.create_table()
-        database.insert_log(risk=risk,entropy=entropy,breaches=breaches,rules_score=rules_score)
-
         result = {
                 "entropy": entropy,
                 "rules": rules_score,
@@ -42,6 +40,7 @@ def index():
                 "risk": risk,
                 "message": message
             }
+        database.insert_log(risk=risk, entropy=entropy, breaches=breaches, rules_score=rules_score)
 
     return render_template("index.html", result=result, error=error)
 

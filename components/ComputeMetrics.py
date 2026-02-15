@@ -70,7 +70,6 @@ class ComputeMetrics:
         length = len(self.password)
         p = self.password
 
-        #Length (strongly weighted)
         if length >= 16:
             score += 3
         elif length >= 12:
@@ -78,7 +77,6 @@ class ComputeMetrics:
         elif length >= 10:
             score += 1
 
-        #Character variety
         has_lower = any(c.islower() for c in p)
         has_upper = any(c.isupper() for c in p)
         has_digit = any(c.isdigit() for c in p)
@@ -89,20 +87,16 @@ class ComputeMetrics:
         if any(run in p.lower() for run in keyboard_sequences):
             score -= 2
 
-        #Penalize repeated characters (aaaa, 1111, !!!!)
         if re.search(r"(.)\1{2,}", p):
             score -= 1
 
-        # 4️⃣ Penalize common patterns / dictionary fragments
         lower_pw = p.lower()
         if any(pat in lower_pw for pat in common_patterns):
             score -= 2
 
-        # 5️⃣ Reward passphrase-like structure (spaces or separators)
         if length >= 14 and re.search(r"[ _\-]", p):
             score += 2
 
-        # Clamp score between 0 and 8
         return max(0, min(score, 8))
 
 def classify_risk(entropy, rule_score, breach_count):
