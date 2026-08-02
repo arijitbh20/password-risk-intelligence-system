@@ -14,4 +14,4 @@ venv/
 .env
 
 # Databases
-*.db
+/*.db
