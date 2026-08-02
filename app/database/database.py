@@ -2,7 +2,8 @@ import sqlite3
 from pathlib import Path
 from app.core.config import DATABASE_PATH
 
-path = Path(__file__).resolve().parents[1] / DATABASE_PATH
+path = Path(__file__).resolve().parents[2] / DATABASE_PATH
+
 class Database:
     def __init__(self):
 
