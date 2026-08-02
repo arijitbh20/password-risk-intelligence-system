@@ -15,3 +15,5 @@ venv/
 
 # Databases
 *.db
+
+!database/.gitkeep
