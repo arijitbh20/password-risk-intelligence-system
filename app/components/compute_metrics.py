@@ -105,7 +105,7 @@ def classify_risk(entropy, rule_score, breach_count):
         return "\nThis password is no longer secure.\nBecause it has appeared in innumerous data breaches, it could be exploited without warning.\nPlease change it now and do not reuse it elsewhere.","CRITICAL"
     if breach_count > 0:
         return "This password is vulnerable due to exposure in previous data breaches.\nEven if it appears complex, attackers may already recognize it.\nChanging it now and using a unique password for each service is strongly recommended.","HIGH"
-    if entropy < 40 or rule_score < 7:
+    if entropy < 45 or rule_score < 6:
         return "\nGood news — this password hasn’t been found in any known breaches.\nHowever, it’s only moderately strong.\nWhile its complexity is decent, real-world security depends on length, uniqueness, and resistance to common patterns.\nA longer passphrase or a few extra characters would significantly improve its safety.","MEDIUM"
     else:
          return "\nGreat choice! This password is strong and hasn’t appeared in known breaches.\nKeep it unique to this service, and you’re in good shape.","LOW"

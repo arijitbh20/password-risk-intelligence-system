@@ -1,211 +1,95 @@
-Advanced Password Risk Intelligence System
+# Password Risk Intelligence System
 
-Overview
+Most password strength checkers are pretty shallow — they check length, maybe throw in a "contains a number" rule, and call it a day. I wanted something that actually reflects how passwords fail in the real world, so this project combines entropy math, a rule-based scoring engine, and live breach data from Have I Been Pwned, then logs everything for analysis on a dashboard.
 
-This project is an advanced password evaluation system that goes beyond
-traditional "strength password strength measuring metrics."
+It's not meant to be a production-grade security product. Think of it as a serious take on a common beginner project, built with the kind of architecture (FastAPI backend, Streamlit frontend, separate analytics layer) you'd actually want if this were real.
 
-While many password checkers only look at length or character variety, complexity etc. I
-wanted to design a system that combines:
+## What it does
 
--   Mathematical password entropy calculation.
--   Deliberate Rule-based password security checking.
--   Real-world password breach intelligence.
--   Persistent logging and analytics of password metrics. (Not the Password itself)
+**Entropy analysis** — I calculate entropy as `Length × log2(CharacterPoolSize)`, where the pool size depends on what character types actually show up in the password (lowercase, uppercase, digits, special chars). Anything above 128 bits gets capped, since the raw math starts producing numbers that don't mean much in practice.
 
-The goal was to build a Risk Intelligence System that evaluates passwords realistically and also provides insights through data visualization.
+**Rule-based scoring** — A custom rule engine scores passwords from 0 (very weak) to 8 (excellent) based on length, character diversity, repeated characters, common patterns, keyboard sequences (things like `qwerty` or `asdf123`), and a small bonus for passphrase-style formatting.
 
-This project was developed as part of my undergraduate work in Computer
-Applications (BCA), with a focus on cybersecurity concepts and
-data-driven analysis.
+**Breach intelligence** — This is the part I think matters most. A password can look "strong" by every rule-based metric and still be garbage if it's been leaked a million times. The system checks against HIBP using the k-anonymity model — it hashes the password locally with SHA-1 and only sends the first 5 characters of that hash to the API. The plaintext password never leaves the app, and HIBP has no way to reconstruct it from what it receives.
 
-Why I Built This:
+**Risk classification** — Based on breach count, entropy, and rule score, each password gets classified as LOW, MEDIUM, HIGH, or CRITICAL. Breach count is weighted the heaviest here — a leaked password is dangerous no matter how "complex" it looks on paper.
 
-During my coursework, I noticed that most password strength tools:
+**Logging and analytics** — Every check gets logged to SQLite (timestamp, risk status, breach count, score, entropy — never the password itself), and a separate Streamlit dashboard visualizes risk distribution, daily trends, score distributions, and correlations between the metrics. It auto-refreshes every 3.5 seconds.
 
--   Overestimate security/Underestimate Security.
--   Often ignore whether a password has already been exposed in data breaches or not.
--   Do not provide analytical insights about the passwords.
+## How it's put together
 
-I wanted to build something more practical i.e a combined intelligence system that combines
-theoretical strength measuring metrics such as 'entropy' with real-world exposure data.
+```
+project/
+│
+├── app.py                     # FastAPI backend
+├── frontend_app.py            # User-facing input UI
+├── dashboard_app.py           # Analytics dashboard
+├── Database.py                # SQLite read/write logic
+├── ComputeMetrics.py          # Entropy, scoring, breach-check logic
+│
+├── database/
+│   └── password.db
+│
+└── requirements.txt
+```
 
-This project allowed me to apply concepts from:
+The backend is a single FastAPI service exposing `POST /api/check-password`, which does the actual entropy/rule/breach computation and returns a risk classification. The frontend just talks to that endpoint. The dashboard is intentionally kept separate so it can be deployed or scaled independently of the checker itself.
 
--   Cryptography fundamentals.
--   Database systems.
--   Software engineering.
--   Data analysis and visualization.
+## Stack
 
-How the System Works:
+- **Backend:** Python, FastAPI, Pydantic
+- **Frontend:** Streamlit
+- **Storage:** SQLite
+- **Analytics:** Pandas, Plotly
+- **Security/networking:** Requests, SHA-1 hashing, HIBP API
 
-The system evaluates a password using three layers:
+## Running it locally
 
-1. Entropy Calculation
+Clone the repo and install dependencies:
 
-Entropy is calculated using:
-
-Entropy (E) = Length of Password(L) × log₂( Password Character Pool Size(C))
-or
-E = L x log₂(C)
-
-The character pool is dynamically determined based on whether the
-password includes characters such as:
-
--   Lowercase letters.
--   Uppercase letters.
--   Digits.
--   Special characters.
-
-This provides a theoretical measure of the randomness of the Password.
-
-
-2. Rule-Based Scoring
-
-The system checks for:
-
--   Minimum length requirements of the Password.
--   Character diversity of the Password.
--   Common patterns in the Password. (Ex.: "123", "password", "pass" etc.)
--   Keyboard sequences (e.g., "qwerty", "zxc","jfk" etc.)
--  Repeated characters.
--  Passphrase-style formatting.
-
-Each factor contributes to a rule-based security score, where the Highest Score is 8, and the lowest score is 0.
-
-
-3. Breach Detection (Real-World Intelligence)
-
-The system integrates with the 'Have I Been Pwned' API using the
-'k-anonymity' model.
-
-How it works:
-
--   The password is hashed locally using SHA-1.
--   Only the first 5 characters (Password Prefix) of the hash are sent.
--   The plaintext password is never transmitted.
--   If the password has appeared previously in known breaches, the breach count of that password is
-    returned.
-
-This ensures that even while checking for breach exposures, the password
-itself is never shared.
-
-System Architecture
-
-The system follows a modular layered architecture:
-
-1. Presentation Layer (Flask Web App)
-2. Core Security Engine (ComputeMetrics)
-3. Data Persistence Layer (SQLite Database)
-4. Analytics Layer (Streamlit Dashboard)
-5. External Threat Intelligence (HaveIBeenPwned API)
-
-Architecture Diagram:
-
-![System Architecture](	System_Architecture.png)
-
-Final Risk Classification
-
-The final risk level is determined by  strategically combining:
-
--   Entropy value.
--   Rule-based score.
--   Breach count.
-
-The system classifies passwords risks as:
-
--   LOW RISK
--   MEDIUM RISK
--   HIGH RISK
--   CRITICAL RISK
-
-Analytics Dashboard
-
-To make the system more insightful and convert from a Risk Evaluator to a Risk Intelligence System, I built a separate real-time
-dashboard using Streamlit and Plotly.
-
-The dashboard provides:
-
--   Risk level distribution Pie Chart (Visualization of Password Risk Level frequencies over time).
--   Rule score distribution (Visualization of the Frequencies of scores from 1 to 8 for passwords over time).
--   Time-series monitoring Line Graph (Visualization of magnitude of passwords evaluated per day over time).
--   Correlation heatmap Matrix (Visualizes how the metrics 'Breach Count', 'Entropy' and 'Rule Score' correlate with each other).
-
-Each password evaluation metric is logged in an SQLite database, and the
-dashboard automatically refreshes every '3.5' seconds to visualize new entries.
-
-
-Security Design Decisions
-
-While building this system, I made numerous security-conscious decisions:
-
--   Passwords are never stored in the database.
--   Only derived metrics (such as Breach count, rule score, entropy) are logged.
--   API communication is done over HTTPS (more secure).
--   SQL Table has parameterized queries which prevents SQL injection.
--   API timeouts after requests and exception handling for API requests significantly reduces risk of System Failure.
-
-I included a simple threat model (Threat_Model.pdf) to identify and mitigate potential threats which are as follows:-
-
--    User Password leakage risk.
--    API interception risks.
--  SQL injection risk.
--  Denial-of-service(DoS/DDoS) risks.
--  Dashboard data exposure risk.
-
-Tech Stack
-
--   Python
--   Flask
--   Streamlit
--   SQLite
--   Pandas
--   Plotly
--   Requests
-
-How to Run the Project
-
-1. Install dependencies
-
+```bash
+git clone <repository-url>
+cd project
 pip install -r requirements.txt
+```
 
-2. Run the Flask application
+Then start each piece in its own terminal.
 
-cd main
-py app.py
+**1. Backend**
+```bash
+uvicorn app:app --reload
+```
+Runs at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
 
-Then open:
+**2. Frontend**
+```bash
+streamlit run frontend_app.py
+```
+`http://localhost:8501`
 
-http://127.0.0.1:5000
+**3. Analytics dashboard**
+```bash
+streamlit run dashboard_app.py --server.port 8502
+```
+`http://localhost:8502`
 
-3. Run the analytics dashboard
+## Security notes
 
-cd main
-streamlit run dashboard_app.py
+A few things I was deliberate about:
 
-What I Learned:
+- Passwords are never stored or logged, anywhere, in any form.
+- Nothing sent to a third party is reversible into the original password — only a 5-character SHA-1 hash prefix goes to HIBP.
+- All database queries are parameterized, so there's no SQL injection surface from the logging layer.
+- Network calls to HIBP are wrapped in timeout and exception handling — if the breach API is down or slow, the app degrades gracefully instead of failing the whole request.
 
-Through this project, I strengthened my understanding of:
+## What I'd add next
 
--   Entropy and theoretical password strength and its relevance while assessing password risks.
--   Secure API integration.
--   Basic threat modeling.
--   Database logging and telemetry analytics.
--   Real-time data visualization.
--   Coding structured Python applications.
+- Swap the rule-based risk classifier for something ML-based, trained on labeled password risk data
+- Basic auth in front of the dashboard (right now anyone with the URL can view it)
+- Actual cloud deployment instead of local-only
+- Exportable historical reports
+- Role-based access if this ever needed multiple admins
 
-It helped me move beyond simple CRUD applications and build something
-that integrates security, backend logic, Database and data analytics, data visualization.
+## Why I built this
 
-If I extend this further, I would like to:
-
--   Add a machine learning-based risk predictor model.
--   Deploy the system.
--   Add admin authentication for dashboard access .
--   Improve statistical analysis of logged data hence increasing the quality of analyzed metric data.
-
-Academic Context
-
-This project reflects my interest in cybersecurity and data-driven
-systems, and it demonstrates my ability to design and implement a
-structured, security-aware application beyond basic web development.
+Mostly to get hands-on with FastAPI + Streamlit talking to each other, practice designing a small but real security workflow (k-anonymity isn't something you stumble into by accident), and get more comfortable with SQLite and Plotly for the analytics side. It touches backend API design, basic threat intelligence integration, and data viz in one project, which is why I picked it over a plainer CRUD app.

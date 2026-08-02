@@ -1,9 +1,12 @@
 import sqlite3
+from pathlib import Path
+from app.core.config import DATABASE_PATH
 
+path = Path(__file__).resolve().parents[1] / DATABASE_PATH
 class Database:
     def __init__(self):
 
-        self.conn = sqlite3.connect("../database/password.db", check_same_thread=False)
+        self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
 
     def create_table(self):
