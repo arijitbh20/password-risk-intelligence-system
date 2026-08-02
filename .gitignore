@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+/__pycache__/
 
 .idea/
 .vscode/
@@ -7,6 +8,6 @@ __pycache__/
 .venv/
 venv/
 
-.env
+.env/
 
-*.db
+/*.db
