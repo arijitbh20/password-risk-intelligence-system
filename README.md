@@ -21,17 +21,26 @@ It's not meant to be a production-grade security product. Think of it as a serio
 ```
 project/
 │
-├── app.py                     # FastAPI backend
-├── frontend_app.py            # User-facing input UI
-├── dashboard_app.py           # Analytics dashboard
-├── Database.py                # SQLite read/write logic
-├── ComputeMetrics.py          # Entropy, scoring, breach-check logic
+├── app/
+│   ├── main.py                    # FastAPI backend, exposes /api/check-password
+│   │
+│   ├── core/
+│   │   └── config.py              # loads env vars: FASTAPI_URL, DASHBOARD_URL, DATABASE_PATH
+│   │
+│   ├── components/
+│   │   └── compute_metrics.py     # entropy, rule scoring, breach-check, risk classification
+│   │
+│   └── database/
+│       ├── database.py            # SQLite read/write logic
+│       └── password.db            # created on first run
 │
-├── database/
-│   └── password.db
+├── frontend_app.py                # user-facing input UI (Streamlit)
+├── dashboard_app.py                # analytics dashboard (Streamlit + Plotly)
 │
 └── requirements.txt
 ```
+
+It's a proper package rather than a flat folder of scripts — `app/core` holds config, `app/components` holds the actual metrics/scoring logic, and `app/database` holds persistence. The two Streamlit apps live outside the package since they're entry points, not importable modules, and both add the project root to `sys.path` so they can pull in `app.core.config` and `app.database.database`.
 
 The backend is a single FastAPI service exposing `POST /api/check-password`, which does the actual entropy/rule/breach computation and returns a risk classification. The frontend just talks to that endpoint. The dashboard is intentionally kept separate so it can be deployed or scaled independently of the checker itself.
 
@@ -57,7 +66,7 @@ Then start each piece in its own terminal.
 
 **1. Backend**
 ```bash
-uvicorn app:app --reload
+uvicorn app.main:app --reload
 ```
 Runs at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
 
@@ -72,6 +81,12 @@ streamlit run frontend_app.py
 streamlit run dashboard_app.py --server.port 8502
 ```
 `http://localhost:8502`
+
+## Database
+
+`app/database/database.py` wraps a single SQLite table, `logs`, with four things: `risk_status`, `breach_count`, `score`, and `entropy`, plus an auto-incrementing id and a timestamp that defaults to whenever the row was inserted. No password, hash, or anything password-derived ever touches this table — it's purely telemetry for the dashboard.
+
+`create_table()` runs once on FastAPI startup (see the `lifespan` block in `main.py`) so the table always exists before the first request comes in. Every insert and the table creation itself go through `with self.conn:`, so they're wrapped in a transaction and committed automatically. `fetch_data()` returns everything ordered by most recent first, and `Database` sets `row_factory = sqlite3.Row` so rows convert cleanly into dictionaries for pandas to consume in the dashboard.
 
 ## Security notes
 
